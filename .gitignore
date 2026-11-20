@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
 
 # next.js
 /.next/
@@ -20,18 +22,53 @@
 # production
 /build
 
-# misc
-.DS_Store
-*.pem
+# drivelaeht - local storage & uploads
+/storage
+/storage/**
+/uploads
+/tmp
+*.tmp
+*.temp
 
-# debug
+# database & prisma local artifacts
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+/prisma/dev.db*
+
+# env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# os & editors
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+# ai agents / local tooling (optional, keep if not tracking)
+/.agents
+/.claude
+/.cursor
+/.devin
+
+# debug & logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
+lerna-debug.log*
 
 # vercel
 .vercel
