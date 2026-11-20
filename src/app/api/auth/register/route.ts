@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { registerSchema } from "@/lib/validators";
-import { registerUser } from "@/services/auth.service";
+import {
+  registerUser,
+  type PendingRegistrationResolution,
+} from "@/services/auth.service";
+
+const pendingResolutionSchema = z
+  .enum(["resume_existing", "replace_with_new"])
+  .optional();
 
 function getClientMeta(req: NextRequest) {
   const forwardedFor = req.headers.get("x-forwarded-for");
@@ -12,7 +20,16 @@ function getClientMeta(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON payload" },
+        { status: 400 }
+      );
+    }
+
     const parsed = registerSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -25,27 +42,104 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await registerUser(parsed.data, getClientMeta(req));
+    const rawBody =
+      body && typeof body === "object"
+        ? (body as { pendingResolution?: unknown })
+        : null;
+
+    const parsedResolution = pendingResolutionSchema.safeParse(
+      rawBody?.pendingResolution
+    );
+    if (!parsedResolution.success) {
+      return NextResponse.json(
+        { error: "Invalid pending resolution option" },
+        { status: 400 }
+      );
+    }
+
+    const pendingResolution: PendingRegistrationResolution | undefined =
+      parsedResolution.data;
+
+    const result = await registerUser(
+      {
+        ...parsed.data,
+        pendingResolution,
+      },
+      getClientMeta(req)
+    );
+
+    const isResumed = result.action !== "created";
 
     return NextResponse.json(
       {
-        message: "Account created. Verification code required.",
+        message: isResumed
+          ? "Pending registration resumed. Verification code required."
+          : "Account created. Verification code required.",
+        requiresTwoFactor: true,
+        action: result.action,
+        email: result.user.email,
         user: result.user,
         twoFactorExpires: result.twoFactorExpires.toISOString(),
         ...(process.env.NODE_ENV !== "production"
           ? { debugTwoFactorCode: result.twoFactorCode }
           : {}),
       },
-      { status: 201 }
+      { status: isResumed ? 200 : 201 }
     );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to register user";
 
-    if (message.includes("already registered")) {
-      return NextResponse.json({ error: message }, { status: 409 });
+    const extra =
+      error && typeof error === "object"
+        ? (error as {
+            field?: unknown;
+            statusCode?: unknown;
+            lockedUntil?: unknown;
+            pendingConflict?: unknown;
+            pendingAction?: unknown;
+          })
+        : null;
+
+    if (extra?.statusCode === 429 || typeof extra?.lockedUntil === "string") {
+      return NextResponse.json(
+        {
+          error: message,
+          ...(typeof extra?.lockedUntil === "string"
+            ? { lockedUntil: extra.lockedUntil }
+            : {}),
+        },
+        { status: 429 }
+      );
     }
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    const field =
+      extra?.field === "email" || extra?.field === "username"
+        ? extra.field
+        : undefined;
+
+    if (field || message.includes("already registered")) {
+      return NextResponse.json(
+        {
+          error: message,
+          ...(field ? { field } : {}),
+          ...(extra?.pendingConflict === true
+            ? {
+                pendingConflict: true,
+                ...(extra?.pendingAction === "choose_resolution"
+                  ? { pendingAction: "choose_resolution" }
+                  : {}),
+              }
+            : {}),
+        },
+        { status: 409 }
+      );
+    }
+
+    console.error("[POST /api/auth/register]", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

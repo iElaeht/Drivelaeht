@@ -1,26 +1,185 @@
+/* ==========================================================================
+   1. TAILWIND & VARIANTES
+   ========================================================================== */
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   2. PALETAS Y VARIABLES SEMÁNTICAS (DUOTONE)
+   ========================================================================== */
+:root,
+[data-theme="light"] {
+  --bg-app: #fafafa;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f4f4f5;
+  --border-edge: #e4e4e7;
+  --text-ink: #171717;
+  --text-muted: #52525b;
+  --accent: #10b981;
+  --accent-hover: #34d399;
+  --accent-fg: #052e16;
+  --accent-soft: rgba(16, 185, 129, 0.14);
+  --accent-secondary: #0284c7;
+  --accent-secondary-soft: rgba(2, 132, 199, 0.12);
+  --scrollbar-thumb: rgba(2, 132, 199, 0.52);
+  --scrollbar-hover: #0284c7;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+[data-theme="dark"] {
+  --bg-app: #0a0a0a;
+  --bg-surface: #121212;
+  --bg-surface-hover: #1c1c1c;
+  --border-edge: #262626;
+  --text-ink: #ededed;
+  --text-muted: #a1a1aa;
+  --accent: #10b981;
+  --accent-hover: #34d399;
+  --accent-fg: #052e16;
+  --accent-soft: rgba(16, 185, 129, 0.16);
+  --accent-secondary: #22d3ee;
+  --accent-secondary-soft: rgba(34, 211, 238, 0.14);
+  --scrollbar-thumb: rgba(34, 211, 238, 0.48);
+  --scrollbar-hover: #22d3ee;
+}
+
+[data-theme="capuccino"] {
+  --bg-app: #1c1714;
+  --bg-surface: #261f1b;
+  --bg-surface-hover: #312823;
+  --border-edge: #3e322c;
+  --text-ink: #f3ebe4;
+  --text-muted: #bcaaa0;
+  --accent: #d4a373;
+  --accent-hover: #e0b489;
+  --accent-fg: #1c1714;
+  --accent-soft: rgba(212, 163, 115, 0.18);
+  --accent-secondary: #e07a5f;
+  --accent-secondary-soft: rgba(224, 122, 95, 0.16);
+  --scrollbar-thumb: rgba(224, 122, 95, 0.55);
+  --scrollbar-hover: #f28482;
+}
+
+[data-theme="rose-pine"] {
+  --bg-app: #191724;
+  --bg-surface: #1f1d2e;
+  --bg-surface-hover: #26233a;
+  --border-edge: #403d52;
+  --text-ink: #e0def4;
+  --text-muted: #908caa;
+  --accent: #ebbcba;
+  --accent-hover: #f2cdcb;
+  --accent-fg: #191724;
+  --accent-soft: rgba(235, 188, 186, 0.18);
+  --accent-secondary: #c4a7e7;
+  --accent-secondary-soft: rgba(196, 167, 231, 0.16);
+  --scrollbar-thumb: rgba(196, 167, 231, 0.55);
+  --scrollbar-hover: #f6c177;
+}
+
+[data-theme="catppuccin"] {
+  --bg-app: #1e1e2e;
+  --bg-surface: #252538;
+  --bg-surface-hover: #313244;
+  --border-edge: #45475a;
+  --text-ink: #cdd6f4;
+  --text-muted: #a6adc8;
+  --accent: #cba6f7;
+  --accent-hover: #d8b9fa;
+  --accent-fg: #1e1e2e;
+  --accent-soft: rgba(203, 166, 247, 0.18);
+  --accent-secondary: #89dceb;
+  --accent-secondary-soft: rgba(137, 220, 235, 0.16);
+  --scrollbar-thumb: rgba(137, 220, 235, 0.55);
+  --scrollbar-hover: #f5c2e7;
+}
+
+/* ==========================================================================
+   3. TOKENS DE TAILWIND (@theme)
+   ========================================================================== */
+@theme {
+  --color-app: var(--bg-app);
+  --color-surface: var(--bg-surface);
+  --color-surface-hover: var(--bg-surface-hover);
+  --color-edge: var(--border-edge);
+  --color-ink: var(--text-ink);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-secondary-soft: var(--accent-secondary-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ==========================================================================
+   4. ESTILOS BASE (HTML & BODY)
+   ========================================================================== */
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+html[data-scrolling="true"] {
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-ink);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* ==========================================================================
+   5. SCROLLBAR PERSONALIZADO (AUTO-OCULTADO POR INACTIVIDAD)
+   ========================================================================== */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+  transition: background-color 0.3s ease;
+}
+
+html[data-scrolling="true"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}
+
+/* ==========================================================================
+   6. KEYFRAMES Y UTILIDADES DE ANIMACIÓN
+   ========================================================================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

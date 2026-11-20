@@ -1,30 +1,36 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { ScrollActivity } from "@/components/shared/ScrollActivity";
 
 export const metadata: Metadata = {
   title: "Drivelaeht",
-  description:
-    "Sistema de almacenamiento privado en la nube con aislamiento por usuario, 2FA y control de sesiones.",
+  description: "Almacenamiento privado y defensivo en la nube",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+const themeInitScript = `
+  (function () {
+    try {
+      var valid = ['light', 'dark', 'capuccino', 'rose-pine', 'catppuccin'];
+      var saved = localStorage.getItem('drivelaeht-theme');
+      var theme = valid.indexOf(saved) !== -1 ? saved : 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.classList.toggle('dark', theme !== 'light');
+    } catch (e) {}
+  })();
+`;
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html
-      lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-neutral-950 text-neutral-100">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="bg-app text-ink antialiased transition-colors duration-200">
+        <ScrollActivity />
         {children}
       </body>
     </html>

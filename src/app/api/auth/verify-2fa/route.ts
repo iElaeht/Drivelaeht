@@ -55,6 +55,36 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to verify code";
-    return NextResponse.json({ error: message }, { status: 400 });
+
+    const extra =
+      error && typeof error === "object"
+        ? (error as {
+            statusCode?: unknown;
+            lockedUntil?: unknown;
+            remainingAttempts?: unknown;
+          })
+        : null;
+
+    if (extra?.statusCode === 429 || typeof extra?.lockedUntil === "string") {
+      return NextResponse.json(
+        {
+          error: message,
+          ...(typeof extra?.lockedUntil === "string"
+            ? { lockedUntil: extra.lockedUntil }
+            : {}),
+        },
+        { status: 429 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error: message,
+        ...(typeof extra?.remainingAttempts === "number"
+          ? { remainingAttempts: extra.remainingAttempts }
+          : {}),
+      },
+      { status: 400 }
+    );
   }
 }

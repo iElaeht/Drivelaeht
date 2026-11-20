@@ -6,30 +6,34 @@ generator client {
   provider = "prisma-client-js"
 }
 
-/// TABLA USER : Almacena las credenciales, perfiles, estados y metadatos de seguridad de cada usuario.
 model User {
-  id                  String       @id @default(cuid())
-  email               String       @unique
-  username            String       @unique
-  passwordHash        String
-  avatarUrl           String?
-  status              UserStatus   @default(OFFLINE)
-  role                Role         @default(USER)
-  storageUsed         Float        @default(0.0) // Almacenamiento consumido en Megabytes
-  birthDate           DateTime?
-  country             String?
-  city                String?
-  lastKnownIp         String?
-  isEmailVerified     Boolean      @default(false)
-  twoFactorCode       String?
-  twoFactorExpires    DateTime?
-  failedLoginAttempts Int          @default(0)
-  lockedUntil         DateTime?
-  themePreference     String       @default("dark")
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+  id                   String     @id @default(cuid())
+  email                String     @unique
+  username             String     @unique
+  passwordHash         String
+  avatarUrl            String?
+  status               UserStatus @default(OFFLINE)
+  role                 Role       @default(USER)
+  storageUsed          Float      @default(0.0)
+  birthDate            DateTime?
+  country              String?
+  city                 String?
+  lastKnownIp          String?
+  isEmailVerified      Boolean    @default(false)
+  twoFactorCode        String?
+  twoFactorExpires     DateTime?
+  twoFactorAttempts    Int        @default(0)
+  twoFactorLockedUntil DateTime?
+  resetCode            String?
+  resetExpires         DateTime?
+  resetAttempts        Int        @default(0)
+  resetLockedUntil     DateTime?
+  failedLoginAttempts  Int        @default(0)
+  lockedUntil          DateTime?
+  themePreference      String     @default("dark")
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
 
-  // Relaciones directas con los recursos del usuario
   sessions     Session[]
   folders      Folder[]
   files        File[]
@@ -40,12 +44,11 @@ model User {
   @@index([email])
 }
 
-/// TABLA SESSION : Gestiona las sesiones activas permitiendo multi-dispositivo simultáneo (PC y Celular) sin expulsiones.
 model Session {
   id          String   @id @default(cuid())
   userId      String
-  token       String   @unique // Token cifrado único por dispositivo
-  deviceAgent String?  // Ej: "Chrome en Windows" o "Safari en iPhone"
+  token       String   @unique
+  deviceAgent String?
   ipAddress   String?
   expiresAt   DateTime
   createdAt   DateTime @default(now())
@@ -56,14 +59,13 @@ model Session {
   @@index([token])
 }
 
-/// TABLA FOLDER : Permite estructurar carpetas y subcarpetas lógicas de manera recursiva desde la raíz, incluyendo miniatura física personalizada.
 model Folder {
   id            String    @id @default(cuid())
   name          String
-  thumbnailPath String?   // Ruta física relativa en disco de la miniatura personalizada de la carpeta
+  thumbnailPath String?
   userId        String
-  parentId      String?   // Null = Raíz. Si contiene un ID = Subcarpeta.
-  deletedAt     DateTime? // Soporte para papelera de reciclaje (Soft Delete)
+  parentId      String?
+  deletedAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -76,20 +78,19 @@ model Folder {
   @@index([parentId])
 }
 
-/// TABLA FILE : Almacena los metadatos y la ruta de la miniatura física personalizada de los archivos guardados en el disco.
 model File {
   id            String    @id @default(cuid())
-  filename      String    // Nombre original (ej: "anime_shot.jpg")
-  storedName    String    // Nombre único en disco para evitar colisiones (ej: "abc123_anime_shot.jpg")
-  mimeType      String    // Tipo de archivo para que el frontend sepa renderizar su vista previa (ej: "image/jpeg", "video/mp4")
-  size          Float     // Tamaño en bytes
-  path          String    // Ruta relativa principal en el servidor (ej: "correo@gmail.com/Photos/anime_shot.jpg")
-  thumbnailPath String?   // Ruta física relativa en disco de su miniatura optimizada o portada personalizada
+  filename      String
+  storedName    String
+  mimeType      String
+  size          Float
+  path          String
+  thumbnailPath String?
   userId        String
-  folderId      String?   // Null = Ubicado en la raíz del usuario
+  folderId      String?
   isPublic      Boolean   @default(false)
-  isStarred     Boolean   @default(false) // Marcado como favorito
-  deletedAt     DateTime? // Soporte para papelera de reciclaje (Soft Delete)
+  isStarred     Boolean   @default(false)
+  deletedAt     DateTime?
   createdAt     DateTime  @default(now())
 
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -100,7 +101,6 @@ model File {
   @@index([folderId])
 }
 
-/// TABLA CONTACT : Agenda de contactos local sincronizada desde el smartphone o ingresada manualmente.
 model Contact {
   id        String   @id @default(cuid())
   name      String
@@ -115,10 +115,9 @@ model Contact {
   @@index([userId])
 }
 
-/// TABLA CLIPBOARD : Almacena el historial del portapapeles compartido entre la PC y el celular en tiempo real.
 model Clipboard {
   id        String        @id @default(cuid())
-  content   String        // Contenido del texto, enlace o fragmento de código
+  content   String
   type      ClipboardType @default(TEXT)
   userId    String
   createdAt DateTime      @default(now())
@@ -128,7 +127,6 @@ model Clipboard {
   @@index([userId])
 }
 
-/// TABLA SHARE_LINK : Genera enlaces públicos temporales y seguros para compartir archivos específicos con caducidad.
 model ShareLink {
   id         String   @id @default(cuid())
   fileId     String
@@ -142,11 +140,10 @@ model ShareLink {
   @@index([token])
 }
 
-/// TABLA LOGS : Registros automatizados de auditoría y seguridad que muestran las acciones de los usuarios. Si se elimina la cuenta, el usuario pasa a ser anónimo ("DELETED_USER").
 model ActivityLog {
   id        String   @id @default(cuid())
-  userId    String?  // Opcional para soportar anonimización si la cuenta es borrada
-  action    String   // Ej: "LOGIN_SUCCESS", "FILE_UPLOADED", "ACCOUNT_DELETED"
+  userId    String?
+  action    String
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loginSchema } from "@/lib/validators";
-import { loginUser } from "@/services/auth.service";
+import { AuthFieldError, loginUser } from "@/services/auth.service";
 import { attachSessionCookie } from "@/lib/session";
 
 function getClientMeta(req: NextRequest) {
@@ -70,10 +70,42 @@ export async function POST(req: NextRequest) {
     const message =
       error instanceof Error ? error.message : "Authentication failed";
 
-    if (message.includes("locked")) {
-      return NextResponse.json({ error: message }, { status: 429 });
+    const extra =
+      error && typeof error === "object"
+        ? (error as {
+            field?: unknown;
+            remainingAttempts?: unknown;
+            lockedUntil?: unknown;
+            statusCode?: unknown;
+          })
+        : null;
+
+    if (message.includes("locked") || extra?.statusCode === 429) {
+      return NextResponse.json(
+        {
+          error: message,
+          ...(typeof extra?.lockedUntil === "string"
+            ? { lockedUntil: extra.lockedUntil }
+            : {}),
+        },
+        { status: 429 }
+      );
     }
 
-    return NextResponse.json({ error: message }, { status: 401 });
+    const field =
+      extra?.field === "email" || extra?.field === "password"
+        ? extra.field
+        : undefined;
+
+    return NextResponse.json(
+      {
+        error: message,
+        ...(field ? { field } : {}),
+        ...(typeof extra?.remainingAttempts === "number"
+          ? { remainingAttempts: extra.remainingAttempts }
+          : {}),
+      },
+      { status: 401 }
+    );
   }
 }
